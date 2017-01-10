@@ -50,7 +50,7 @@ def prep_target(file):
           return target
 def split_data_set(data):
      train=random.sample(data,int(len(data)*0.80))
-     test=random.sample(data,int(len(data)*0.10))
+     test=random.sample(data,int(len(data)*0.20))
      return (train,test)
      
 target=prep_target("Target.txt")
@@ -58,25 +58,33 @@ target=prep_target("Target.txt")
 
 dataset=prep_data_set("Dataset.txt")
 
+for k in range(len(dataset)):
+    dataset[k].append(target[k])
+
 Train,Test=split_data_set(dataset)
-print (len(Train))
+#print (len(Train))
+
+inptest=Test
+inptest=[[[y] for y in x[0:61]]for x in inptest]
 
 inpt=Train
-inpt=[[[y] for y in x]for x in inpt]
-print (len(inpt[0]))
-inp =(dataset[0])
-inp = [[x] for x in inp]
+inpt=[[[y] for y in x[0:61]]for x in inpt]
+#print ((inpt[0]))
+
+#inp =(dataset[0])
+#inp = [[x] for x in inp]
 #print (inp)
 
 no_hid_layer=1
 no_of_node=5
-hid_weight=[[0.5 for y in range(61)] for x in range(5)]
+
+hid_weight=[[0.5 for y in range(61)] for x in range(no_of_node)]
 #print (len(hid_weight[0]))
 out_weight=[[0.5 for x in range(no_of_node)]]
 #print (out_weight)
 output=target
 
-for x in range(1000):
+for x in range(100):
      Terr=0
      for i in range(len(inpt)): 
          hidin=matrixmult(hid_weight,inpt[i])
@@ -88,10 +96,9 @@ for x in range(1000):
          #print (outin)
          outout=activation(outin[0][0])
          #print outout
-         
-         Terr = Terr + (abs(output[0]-outout))
-         Terr = Terr/(i+1)
-         outerr=outputerror(Terr)
+         #print Train[i][61]
+         err = abs(Train[i][61]-outout)
+         outerr=outputerror(err)
          out_weight=[[weightupdate(x,1,outerr,outout) for x in out_weight[0]]]
          #print (out_weight)
 
@@ -103,9 +110,23 @@ for x in range(1000):
 
          for i in range(len(hid_weight)):
              for j in range(len(hid_weight[0])):
-                 hid_weight[i][j]=weightupdate(hid_weight[i][j],1,hiderr[i],inp[j][0])
-
+                 hid_weight[i][j]=weightupdate(hid_weight[i][j],1,hiderr[i],hidout[i][0])
          #print (hid_weight)
-     print (Terr)
+     #print (Terr)
+c=0
+for i in range(len(inptest)): 
+         hidin=matrixmult(hid_weight,inptest[i])
+         #print (hidin)
+         hidout=[[activation(x[0])] for x in hidin]
+         #print (hidout)
 
-     
+         outin=matrixmult(out_weight,hidout)
+         #print (outin)
+         outout=activation(outin[0][0])
+         #print "program",outout
+         #print "actual",Train[i][61]
+         #print "abs",abs(outout-Train[i][61])
+         if(abs(outout-Train[i][61])<0.10):
+             c=c+1
+
+print "correctness: ",c*100.0/len(inptest),"%"
